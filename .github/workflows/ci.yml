@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Lint + build (macOS 26)
+    # AppIcon.icon needs Xcode 26+ actool on a macOS 26 host.
+    # The macos-26 image only ships Xcode 26.x; the macOS 27 SDK needs a different runner image.
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Toolchain info
+        run: |
+          ls -1d /Applications/Xcode* || true
+          xcodebuild -version
+          sw_vers
+
+      - name: Guard against committed signing material
+        run: |
+          if git ls-files | grep -E '\.(p8|p12|cer|mobileprovision|provisionprofile)$'; then
+            echo "::error::Signing material is tracked"; exit 1; fi
+          if git grep -nIE 'BEGIN (EC |RSA |OPENSSH )?PRIVATE KEY|AuthKey_[A-Z0-9]{10}\.p8'; then
+            echo "::error::Possible secret in tracked files"; exit 1; fi
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Lint
+        run: xcrun swift-format lint --strict --recursive --parallel Cabral CabralTests
+
+      - name: Generate project
+        run: xcodegen generate --quiet
+
+      - name: Build Debug (unsigned)
+        run: |
+          xcodebuild -project Cabral.xcodeproj -scheme Cabral -configuration Debug \
+            -derivedDataPath build -destination 'generic/platform=macOS' -quiet \
+            CODE_SIGNING_ALLOWED=NO build
+
+      - name: Unit tests
+        run: |
+          xcodebuild test -project Cabral.xcodeproj -scheme Cabral \
+            -destination 'platform=macOS' -derivedDataPath build -quiet \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Build Release universal (unsigned)
+        run: |
+          xcodebuild -project Cabral.xcodeproj -scheme Cabral -configuration Release \
+            -derivedDataPath build -destination 'generic/platform=macOS' -quiet \
+            ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO build
+          lipo -archs build/Build/Products/Release/Cabral.app/Contents/MacOS/Cabral
+
+      - name: Bundle version matches project.yml
+        run: |
+          WANT=$(sed -nE 's/^[[:space:]]*MARKETING_VERSION:[[:space:]]*"?([^"]+)"?.*/\1/p' project.yml | head -1)
+          GOT=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' build/Build/Products/Release/Cabral.app/Contents/Info.plist)
+          [ "$WANT" = "$GOT" ] || { echo "::error::Info.plist $GOT != project.yml $WANT"; exit 1; }

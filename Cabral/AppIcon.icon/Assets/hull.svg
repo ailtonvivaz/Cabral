@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <g fill="#a9552b">
+    <!-- masts, full length down into the hull -->
+    <rect x="540" y="162" width="15" height="560" rx="3"/>
+    <rect x="323" y="326" width="14" height="380" rx="3"/>
+  </g>
+  <g stroke="#a9552b" stroke-width="12" stroke-linecap="round">
+    <!-- yards -->
+    <line x1="442" y1="238" x2="636" y2="257"/>
+    <line x1="248" y1="387" x2="395" y2="403"/>
+  </g>
+  <!-- hull, closed down to the keel -->
+  <path fill="#a9552b" d="M178,628 L296,632 L300,648 L314,666 C430,692 570,700 690,680 C760,668 805,625 846,594 L846,608 C805,622 782,652 766,690 C748,735 725,775 690,800 C600,830 400,830 290,805 C258,790 236,745 220,700 C206,665 196,645 182,638 Z"/>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <clipPath id="hullClip">
+      <path d="M178,628 L296,632 L300,648 L314,666 C430,692 570,700 690,680 C760,668 805,625 846,594 L846,608 C805,622 782,652 766,690 C748,735 725,775 690,800 C600,830 400,830 290,805 C258,790 236,745 220,700 C206,665 196,645 182,638 Z"/>
+    </clipPath>
+  </defs>
+  <!-- stripe, parallel to the deck line and clipped to the hull edges -->
+  <path clip-path="url(#hullClip)" fill="none" stroke="#644026" stroke-width="16" d="M170,668 C320,706 450,734 580,736 C700,738 790,690 880,624"/>
+</svg>

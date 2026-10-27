@@ -1,0 +1,113 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build (publishes a DRAFT), e.g. v0.1.0"
+        required: true
+        type: string
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Build, sign, notarize, publish
+    runs-on: macos-26
+    timeout-minutes: 45
+    environment: release
+    permissions:
+      contents: write
+    env:
+      # Measured: the image's newer default Xcode (26.5 at the time) notarytool returned HTTP 500.
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      # The `release` environment only admits v* tags, and it checks github.ref, not inputs.tag.
+      - name: Manual runs must be dispatched on the tag
+        if: github.event_name == 'workflow_dispatch' && github.ref != format('refs/tags/{0}', inputs.tag)
+        run: |
+          echo "::error::Dispatch on the tag: gh workflow run release.yml --ref $TAG -f tag=$TAG"
+          exit 1
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Tag must match MARKETING_VERSION
+        id: version
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "::error::Bad tag $TAG"; exit 1; }
+          WANT="${TAG#v}"
+          GOT=$(sed -nE 's/^[[:space:]]*MARKETING_VERSION:[[:space:]]*"?([^"]+)"?.*/\1/p' project.yml | head -1)
+          [ "$WANT" = "$GOT" ] || { echo "::error::Tag $TAG but project.yml has $GOT"; exit 1; }
+          echo "version=$WANT" >> "$GITHUB_OUTPUT"
+
+      - name: Install tools
+        run: brew install xcodegen create-dmg
+
+      - name: Import Developer ID certificate (temporary keychain)
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          for v in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD KEYCHAIN_PASSWORD; do
+            [ -n "${!v}" ] || { echo "::error::Missing secret $v (see docs/RELEASING.md)"; exit 1; }
+          done
+          KC="$RUNNER_TEMP/cabral-signing.keychain-db"
+          P12="$RUNNER_TEMP/devid.p12"
+          printf '%s' "$APPLE_CERTIFICATE" | base64 --decode -o "$P12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KC"
+          security import "$P12" -k "$KC" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KC"
+          # Prepend the temp keychain to the search list, keeping the existing ones.
+          # shellcheck disable=SC2046
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | sed 's/["[:space:]]//g')
+          security default-keychain -s "$KC"
+          rm -f "$P12"
+
+      - name: Build, sign, DMG, notarize, staple
+        env:
+          SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          EXPECTED_VERSION: ${{ steps.version.outputs.version }}
+        run: ./scripts/release.sh
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Cabral-${{ steps.version.outputs.version }}
+          path: |
+            build/Cabral-*.dmg
+            build/Cabral-*.dmg.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          # Notes = the CHANGELOG section for this version; GitHub's generated notes if it is missing.
+          awk -v v="$VERSION" '/^## \[/{p=index($0,"## [" v "]")==1; next} /^\[.*\]: /{p=0} p' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          FLAGS=(--verify-tag --title "Cabral $VERSION")
+          if [ -s "$RUNNER_TEMP/notes.md" ]; then FLAGS+=(--notes-file "$RUNNER_TEMP/notes.md"); else FLAGS+=(--generate-notes); fi
+          if [[ "$VERSION" == *-* ]]; then FLAGS+=(--prerelease); fi
+          if [[ "$EVENT" == workflow_dispatch ]]; then FLAGS+=(--draft); fi
+          gh release create "$TAG" "${FLAGS[@]}" "build/Cabral-$VERSION.dmg" "build/Cabral-$VERSION.dmg.sha256"
+
+      - name: Remove keychain
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/cabral-signing.keychain-db" 2>/dev/null || true

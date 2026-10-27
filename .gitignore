@@ -1,0 +1,59 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Build output (make build, scripts/release.sh)
+/build/
+DerivedData/
+*.xcarchive
+*.dmg
+*.dmg.sha256
+*.zip
+*.dSYM/
+notary.plist
+
+# XcodeGen generates these from project.yml (run `make project`)
+/Cabral.xcodeproj/
+/Cabral/Info.plist
+*.xcworkspace
+
+# Xcode user state
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.moved-aside
+
+# Swift Package Manager (Package.resolved IS committed if packages are added)
+.swiftpm/
+.build/
+
+# Signing / notarization material: never commit
+*.p8
+*.p12
+*.cer
+*.mobileprovision
+*.provisionprofile
+*.keychain-db
+.env
+.env.*
+
+# Logs
+*.log
+
+# Local design scratch (icon prototypes live outside the repo)
+/design/
+
+# AI agent / editor local state
+.superpowers/
+.serena/
+.codegraph/
+.claude/settings.local.json
+.claude/worktrees/
+.claude/scheduled_tasks.lock
+.cursor/
+.vscode/
+.idea/
+*.swp
+*~

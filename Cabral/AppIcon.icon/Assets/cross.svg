@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- cross of the Order of Christ: four flared arms with concave sides -->
+  <g transform="translate(587,461)" fill="#bb0e25">
+    <path d="M-12,-10 Q-12,-62 -46,-92 L46,-92 Q12,-62 12,-10 Z"/>
+    <path d="M10,-12 Q62,-12 92,-46 L92,46 Q62,12 10,12 Z"/>
+    <path d="M12,10 Q12,62 46,92 L-46,92 Q-12,62 -12,10 Z"/>
+    <path d="M-10,12 Q-62,12 -92,46 L-92,-46 Q-62,-12 -10,-12 Z"/>
+    <rect x="-13" y="-13" width="26" height="26"/>
+  </g>
+</svg>

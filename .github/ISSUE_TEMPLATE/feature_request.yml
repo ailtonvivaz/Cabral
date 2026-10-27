@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest an improvement
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: Please read [docs/ROADMAP.md](https://github.com/ailtonvivaz/Cabral/blob/main/docs/ROADMAP.md) first, including the Discarded list.
+  - type: textarea
+    id: problem
+    attributes: { label: Problem, description: What are you trying to do? }
+    validations: { required: true }
+  - type: textarea
+    id: proposal
+    attributes: { label: Proposed solution }
+  - type: textarea
+    id: alternatives
+    attributes: { label: Alternatives / how other apps do it }
+  - type: checkboxes
+    id: simple
+    attributes:
+      label: Scope
+      options:
+        - label: This keeps Cabral simple (one clear setting, not a scripting system).

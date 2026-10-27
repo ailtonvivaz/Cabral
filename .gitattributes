@@ -1,0 +1,10 @@
+* text=auto eol=lf
+*.swift text diff=swift
+*.sh text eol=lf
+*.yml text
+*.json text
+*.svg text
+*.png binary
+*.icns binary
+*.dmg binary
+docs/** linguist-documentation

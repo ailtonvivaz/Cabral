@@ -1,0 +1,62 @@
+name: Cabral
+options:
+  bundleIdPrefix: app.vivaz
+  developmentLanguage: en
+  deploymentTarget:
+    macOS: "26.0"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  Cabral:
+    type: application
+    platform: macOS
+    sources: [Cabral]
+    scheme:
+      testTargets: [CabralTests]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.vivaz.Cabral
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
+        DEVELOPMENT_TEAM: ""
+        ENABLE_HARDENED_RUNTIME: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    info:
+      path: Cabral/Info.plist
+      properties:
+        CFBundleDisplayName: Cabral
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSUIElement: true
+        LSApplicationCategoryType: public.app-category.utilities
+        NSPrincipalClass: NSApplication
+        CFBundleURLTypes:
+          - CFBundleURLName: Web site URL
+            CFBundleURLSchemes: [http, https]
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: HTML document
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [public.html]
+  CabralTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [CabralTests]
+    dependencies:
+      - target: Cabral
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: app.vivaz.CabralTests
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
+        DEVELOPMENT_TEAM: ""
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Cabral.app/Contents/MacOS/Cabral
+        BUNDLE_LOADER: $(TEST_HOST)
