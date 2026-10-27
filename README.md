@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/images/icon.png" width="128" height="128" alt="Cabral icon: a caravel with a red cross on its sail"></p>
+
 <h1 align="center">Cabral</h1>
 
 <p align="center"><strong>Every link finds its browser.</strong></p>
