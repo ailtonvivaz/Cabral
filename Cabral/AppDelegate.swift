@@ -39,9 +39,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
-        let sender = Self.senderName()
+        let app = Self.senderApp()
+        // AirDrop links arrive from sharingd, a daemon: name the feature and center the
+        // picker, since the pointer has nothing to do with the link.
+        let airDrop = app?.bundleIdentifier == "com.apple.sharingd"
+        let sender = airDrop ? String(localized: "AirDrop") : app?.localizedName
         for url in urls where ["http", "https"].contains(url.scheme?.lowercased()) {
-            links.handle(.init(url: url, sender: sender))
+            links.handle(.init(url: url, sender: sender, atPointer: !airDrop))
         }
     }
 
@@ -57,13 +61,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
-    /// Name of the app that sent the open event, when it is a regular app.
-    private static func senderName() -> String? {
+    /// The process that sent the open event, unless it is Cabral itself.
+    private static func senderApp() -> NSRunningApplication? {
         guard
             let pid = NSAppleEventManager.shared().currentAppleEvent?
                 .attributeDescriptor(forKeyword: AEKeyword(keySenderPIDAttr))?.int32Value,
             pid != ProcessInfo.processInfo.processIdentifier
         else { return nil }
-        return NSRunningApplication(processIdentifier: pid)?.localizedName
+        return NSRunningApplication(processIdentifier: pid)
     }
 }

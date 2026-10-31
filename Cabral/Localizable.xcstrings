@@ -61,6 +61,17 @@
         }
       }
     },
+    "AirDrop" : {
+      "comment" : "Shown as the sender of a link received by AirDrop.",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AirDrop"
+          }
+        }
+      }
+    },
     "Always use for %@" : {
       "localizations" : {
         "pt-BR" : {
