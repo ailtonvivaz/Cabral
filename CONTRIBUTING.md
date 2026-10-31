@@ -34,8 +34,9 @@ Useful targets: `make build`, `make run`, `make test`, `make lint`, `make format
 
 - Swift 6 with `MainActor` as the default isolation. Pure logic stays `nonisolated`
   (`Model.swift`, `Router.swift`) so it is easy to test.
-- No third-party dependencies without discussion first.
-- No network calls. The README promises none, and that promise is part of the product.
+- No new third-party dependencies without discussion first; Sparkle (updates) is the only one.
+- No network calls besides Sparkle's consented update check. The README's privacy section is
+  part of the product.
 - Run `make format` and `make lint` before pushing; CI runs the linter in strict mode.
 - Comments explain *why*, not *what*.
 - UI strings are written in English in code and translated in `Cabral/Localizable.xcstrings`;

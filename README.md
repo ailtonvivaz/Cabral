@@ -49,6 +49,8 @@ page itself; it only decides, then hands the URL over.
 - If a browser is missing or fails to open, Cabral shows an alert and then the picker, so the
   link is never lost.
 - Rules are stored locally in a small JSON file (see [Configuration](#configuration)).
+- Updates itself with [Sparkle](https://sparkle-project.org), only with your consent (see
+  [Privacy](#privacy)): **Check for Updates…** in Settings and in the menu.
 - Signed with Developer ID and notarized.
 
 Cabral is an accessory app: there is no Dock icon and no menu-bar icon while it works. The
@@ -67,8 +69,9 @@ Dock icon appears only while the Settings window is open.
 The DMG is Developer ID signed and notarized. A `.sha256` checksum sits next to it on the
 release page: `shasum -a 256 -c Cabral-x.y.z.dmg.sha256`.
 
-There is no auto-update yet; watch the repository's releases to hear about new versions.
-A Homebrew cask is planned.
+On the second launch Cabral asks whether to check for updates automatically. Either way,
+**Check for Updates…** is in Settings › Updates and in the Cabral menu, and the choice can be
+changed there at any time. A Homebrew cask is planned.
 
 ## First run
 
@@ -132,7 +135,16 @@ move the file, Cabral starts empty and does not save changes, so the file is nev
 
 ## Privacy
 
-- No network requests and no telemetry. Cabral never fetches the links it routes.
+- No telemetry. Cabral never fetches the links it routes.
+- Its only network traffic is the update check, and it happens only when you choose
+  **Check for Updates…** or after you agree to automatic checks (Sparkle asks once, on the
+  second launch; then once a day). Change it in Settings › Updates.
+- An update check downloads one file, `appcast.xml`, from `github.com`; installing an update
+  downloads the DMG from the same release. GitHub sees an ordinary HTTPS request: your IP
+  address and a User-Agent with Cabral's and Sparkle's versions. Nothing else about your Mac
+  is sent (Sparkle's system profiling is off).
+- [Sparkle](https://sparkle-project.org) is Cabral's only dependency. The feed and every
+  update are EdDSA-signed, and Sparkle refuses anything whose signature does not match.
 - Your rules exist only in the local `config.json` above.
 - The name of the app that sent a link is read locally, from the Apple Event that delivered it,
   and is only shown in the picker.

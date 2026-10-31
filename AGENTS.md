@@ -13,6 +13,7 @@ and forwards each http/https link to a real browser, by domain rule or via a pic
 - `SettingsWindow.swift`, `SettingsView.swift`, `RuleRow.swift`: Settings and the URL tester.
 - `Store.swift`: JSON persistence in `~/Library/Application Support/Cabral/config.json`.
 - `BrowserCatalog.swift`: browser discovery, default-browser check and switch.
+- `Updater.swift`: the Sparkle updater (opt-in checks, "Check for Updates…").
 - `MainMenu.swift`: the menu shown while Settings is open.
 - `CabralTests/`: Swift Testing unit tests.
 
@@ -25,7 +26,11 @@ and forwards each http/https link to a real browser, by domain rule or via a pic
 
 - Edit `project.yml`; never the generated `Cabral.xcodeproj` or `Cabral/Info.plist`.
 - Keep routing pure and `nonisolated`; UI and AppKit code is `MainActor`.
-- No dependencies and no network calls, ever (README privacy promise).
+- Sparkle is the only dependency and its update check the only network traffic (README
+  privacy promise): never add another dependency or network call, never fetch routed links,
+  never enable system profiling or automatic checks without the user's consent.
+- Updates: Sparkle settings live in `project.yml`; `Updater.swift` wraps them. The appcast is
+  built and signed in CI by `scripts/appcast.sh`.
 - Never offer Cabral itself as a target browser.
 - `config.json` is a public contract (`version: 1`): change it compatibly and add tests.
 - UI strings are English in code; every user-facing string gets a pt-BR entry in `Cabral/Localizable.xcstrings`.
