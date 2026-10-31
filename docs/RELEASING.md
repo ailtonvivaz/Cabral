@@ -3,8 +3,13 @@
 Maintainer-only. Contributors never need any of this: `make build` works unsigned.
 
 A release is a Developer ID signed, notarized and stapled `Cabral-X.Y.Z.dmg`, plus its
-`Cabral-X.Y.Z.dmg.sha256`, attached to a GitHub Release whose notes come from
-[CHANGELOG.md](../CHANGELOG.md).
+`Cabral-X.Y.Z.dmg.sha256` and a signed Sparkle feed, `appcast.xml`, attached to a GitHub
+Release whose notes come from [CHANGELOG.md](../CHANGELOG.md).
+
+Installed copies of Cabral read
+`https://github.com/ailtonvivaz/Cabral/releases/latest/download/appcast.xml` (`SUFeedURL` in
+`project.yml`). "Latest" is the newest published, non-prerelease release, so draft and
+prerelease (`-suffix`) releases never reach users through Sparkle.
 
 ## 1. Versioning
 
@@ -26,8 +31,9 @@ A release is a Developer ID signed, notarized and stapled `Cabral-X.Y.Z.dmg`, pl
 
 ## 2. CI release (`.github/workflows/release.yml`)
 
-- **Pushing a `v*` tag** builds, signs, notarizes, staples, and publishes a GitHub Release
-  with the DMG and its checksum. The notes are the CHANGELOG section for that version; if the
+- **Pushing a `v*` tag** builds, signs, notarizes, staples, generates the signed appcast
+  (`scripts/appcast.sh`), and publishes a GitHub Release with the DMG, its checksum and
+  `appcast.xml`. The notes are the CHANGELOG section for that version; if the
   section is missing, GitHub's generated notes are used instead.
 - **Running the workflow by hand** (`workflow_dispatch`, input `tag`, e.g. `v0.1.0`) does the
   same for an existing tag but publishes a **draft** release. Run it **on the tag itself**:
@@ -62,9 +68,37 @@ Add these secrets to the environment (`gh secret set <NAME> --env release`):
 | `APPLE_API_KEY`              | Base64 of the App Store Connect API key (`AuthKey_<KEY_ID>.p8`)    | App Store Connect › Users and Access › Integrations › Team Keys; then `base64 -i AuthKey_<KEY_ID>.p8 \| pbcopy` |
 | `APPLE_API_KEY_ID`           | The key's ID                                                       | Shown next to the key in App Store Connect |
 | `APPLE_API_ISSUER`           | The team's issuer UUID                                             | Shown above the key list in App Store Connect |
+| `SPARKLE_ED_PRIVATE_KEY`     | Sparkle's EdDSA private key (base64 Ed25519 seed) that signs updates and the appcast | See [Sparkle signing key](#sparkle-signing-key) below |
 
 Never commit `.p8`, `.p12` or certificate files; `.gitignore` excludes them and CI fails if
 one is tracked. Delete the local `.p12` and base64 copies once the secrets are saved.
+
+### Sparkle signing key
+
+One key, created once. Installed copies trust only the public half, so **losing the private
+key or replacing it strands every installed copy**: they would have to update by hand. Back it
+up (e.g. in a password manager).
+
+Sparkle's tools are in the release tarball (`Sparkle-2.10.1.tar.xz` from
+[Sparkle's releases](https://github.com/sparkle-project/Sparkle/releases), folder `bin/`):
+
+```sh
+./bin/generate_keys            # creates the key in your login keychain, prints the public key
+./bin/generate_keys -p         # prints the public key again later
+```
+
+1. Put the public key in `project.yml` as `SPARKLE_PUBLIC_ED_KEY` and commit it. It is public;
+   the private key never leaves the keychain, the backup and the GitHub secret.
+2. Save the private key as the environment secret, through a file that never touches the repo:
+
+   ```sh
+   ./bin/generate_keys -x "$TMPDIR/sparkle.key"
+   gh secret set SPARKLE_ED_PRIVATE_KEY --env release < "$TMPDIR/sparkle.key"
+   rm -P "$TMPDIR/sparkle.key"
+   ```
+
+`scripts/appcast.sh` refuses to sign when the secret's public half differs from
+`SUPublicEDKey` in the built app, and `scripts/release.sh` refuses a build without a public key.
 
 ## 4. Local fallback
 
@@ -86,9 +120,15 @@ Then:
 ```sh
 make release    # build/Cabral-X.Y.Z.dmg and build/Cabral-X.Y.Z.dmg.sha256
 
+# Signed appcast (build/appcast.xml); needs openssl 3 and Sparkle's bin/ (see section 3).
+./bin/generate_keys -x "$TMPDIR/sparkle.key"
+SPARKLE_ED_PRIVATE_KEY="$(cat "$TMPDIR/sparkle.key")" SPARKLE_BIN=/path/to/Sparkle/bin \
+    OPENSSL="$(brew --prefix openssl@3)/bin/openssl" TAG=vX.Y.Z ./scripts/appcast.sh
+rm -P "$TMPDIR/sparkle.key"
+
 # Notes go outside the repo: an untracked file would make the next `make bump` refuse to run.
 awk -v v="X.Y.Z" '/^## \[/{p=index($0,"## [" v "]")==1; next} /^\[.*\]: /{p=0} p' CHANGELOG.md > "$TMPDIR/notes.md"
-gh release create vX.Y.Z build/Cabral-X.Y.Z.dmg build/Cabral-X.Y.Z.dmg.sha256 \
+gh release create vX.Y.Z build/Cabral-X.Y.Z.dmg build/Cabral-X.Y.Z.dmg.sha256 build/appcast.xml \
     --verify-tag --title "Cabral X.Y.Z" --notes-file "$TMPDIR/notes.md"
 ```
 
@@ -102,7 +142,23 @@ shasum -a 256 -c Cabral-X.Y.Z.dmg.sha256
 spctl -a -t install -vv Cabral-X.Y.Z.dmg    # expect: accepted, source=Notarized Developer ID
 ```
 
-## 6. Why the workflows pin Xcode 26.2
+To check an update end to end, keep the previous version installed, publish the new release,
+then choose **Check for Updates…** in the old copy: it should offer the new version, install it
+and relaunch. `appcast.xml` on the release page must list the new version and an
+`sparkle:edSignature` for the DMG.
+
+## 6. Sparkle and code signing
+
+Sparkle's helpers (`Autoupdate`, `Updater.app`) ship ad-hoc signed. `scripts/release.sh`
+re-signs them, the framework and then the app with the Developer ID, the hardened runtime and
+a timestamp, so notarization accepts them. Cabral is not sandboxed, so it never uses Sparkle's
+XPC services; the script removes them from the bundle instead of signing them.
+
+To upgrade Sparkle, change `exactVersion` in `project.yml` and both `SPARKLE_VERSION` and
+`SPARKLE_SHA256` (of `Sparkle-X.Y.Z.tar.xz`) in `.github/workflows/release.yml`; CI fails if
+the versions differ.
+
+## 7. Why the workflows pin Xcode 26.2
 
 The workflows set `DEVELOPER_DIR` to Xcode 26.2 on the `macos-26` runner instead of using the
 image's default Xcode:

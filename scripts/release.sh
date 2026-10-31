@@ -2,6 +2,7 @@
 #
 # Cabral release: build (Developer ID, hardened runtime) → DMG → notarize → staple.
 # Output: build/Cabral-<version>.dmg + build/Cabral-<version>.dmg.sha256
+# The Sparkle appcast is a separate step: scripts/appcast.sh.
 #
 # Maintainers only. Contributors never need this script; `make build` works unsigned.
 #
@@ -75,6 +76,19 @@ xcodebuild -project "${APP_NAME}.xcodeproj" -scheme "$APP_NAME" -configuration R
     ONLY_ACTIVE_ARCH=NO \
     build
 
+# Sparkle ships its helpers ad-hoc signed; notarization needs every executable signed with the
+# Developer ID, hardened runtime and a timestamp, innermost first. Cabral is not sandboxed, so
+# Sparkle's XPC services are never used (SUEnableInstallerLauncherService is off): drop them.
+echo "▶ Re-signing Sparkle…"
+SPARKLE="$APP_PATH/Contents/Frameworks/Sparkle.framework"
+[[ -d "$SPARKLE" ]] || { echo "✗ Sparkle.framework missing from $APP_PATH" >&2; exit 1; }
+rm -rf "$SPARKLE/Versions/B/XPCServices" "$SPARKLE/XPCServices"
+SIGN=(codesign --force --sign "$IDENTITY" --options runtime --timestamp)
+"${SIGN[@]}" "$SPARKLE/Versions/B/Autoupdate"
+"${SIGN[@]}" "$SPARKLE/Versions/B/Updater.app"
+"${SIGN[@]}" "$SPARKLE"
+"${SIGN[@]}" --preserve-metadata=entitlements "$APP_PATH"
+
 echo "▶ Verifying signature…"
 codesign --verify --deep --strict --verbose=2 "$APP_PATH" 2>&1 | sed 's/^/   /'
 codesign -dvv "$APP_PATH" 2>&1 | grep -E "Authority=Developer|TeamIdentifier|Timestamp|Runtime" | sed 's/^/   /'
@@ -83,6 +97,9 @@ VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_P
 [[ -z "${EXPECTED_VERSION:-}" || "$VERSION" == "$EXPECTED_VERSION" ]] \
     || { echo "✗ Built $VERSION, expected $EXPECTED_VERSION" >&2; exit 1; }
 DMG_PATH="build/${APP_NAME}-${VERSION}.dmg"
+# Without a public key Sparkle never starts, and that build could never update itself.
+[[ -n "$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$APP_PATH/Contents/Info.plist" 2>/dev/null)" ]] \
+    || { echo "✗ SUPublicEDKey is empty: set SPARKLE_PUBLIC_ED_KEY in project.yml" >&2; exit 1; }
 
 # Relative filename inside the .sha256 so `shasum -c` works next to the downloaded DMG.
 write_sha() {

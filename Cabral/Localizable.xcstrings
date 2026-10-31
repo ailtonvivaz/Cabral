@@ -111,6 +111,36 @@
         }
       }
     },
+    "Check Now" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Procurar Agora"
+          }
+        }
+      }
+    },
+    "Check for Updates…" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Procurar Atualizações…"
+          }
+        }
+      }
+    },
+    "Check for updates automatically" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Procurar atualizações automaticamente"
+          }
+        }
+      }
+    },
     "Close" : {
       "localizations" : {
         "pt-BR" : {
@@ -437,6 +467,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Desfazer"
+          }
+        }
+      }
+    },
+    "Update checks contact GitHub only and send nothing about your Mac." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A busca por atualizações acessa apenas o GitHub e não envia nada sobre o seu Mac."
+          }
+        }
+      }
+    },
+    "Updates" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualizações"
+          }
+        }
+      }
+    },
+    "Version %@" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versão %@"
           }
         }
       }

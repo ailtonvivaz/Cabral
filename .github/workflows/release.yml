@@ -51,7 +51,22 @@ jobs:
           echo "version=$WANT" >> "$GITHUB_OUTPUT"
 
       - name: Install tools
-        run: brew install xcodegen create-dmg
+        run: brew install xcodegen create-dmg openssl@3
+
+      # generate_appcast and sign_update come from Sparkle's release tarball, pinned by hash.
+      - name: Sparkle tools
+        env:
+          SPARKLE_VERSION: "2.10.1"
+          SPARKLE_SHA256: 1a856d2a9edb8e628de88121d7be04cf0e2167f8641650b78fca00b14244cf27
+        run: |
+          WANT=$(sed -nE '/^  Sparkle:/,/exactVersion/s/^[[:space:]]*exactVersion:[[:space:]]*"?([^"]+)"?.*/\1/p' project.yml)
+          [ "$WANT" = "$SPARKLE_VERSION" ] || { echo "::error::project.yml pins Sparkle $WANT, workflow $SPARKLE_VERSION"; exit 1; }
+          DIR="$RUNNER_TEMP/sparkle"; mkdir -p "$DIR"
+          curl -fsSLo "$DIR/sparkle.tar.xz" \
+            "https://github.com/sparkle-project/Sparkle/releases/download/$SPARKLE_VERSION/Sparkle-$SPARKLE_VERSION.tar.xz"
+          echo "$SPARKLE_SHA256  $DIR/sparkle.tar.xz" | shasum -a 256 -c
+          tar -xf "$DIR/sparkle.tar.xz" -C "$DIR" ./bin
+          echo "SPARKLE_BIN=$DIR/bin" >> "$GITHUB_ENV"
 
       - name: Import Developer ID certificate (temporary keychain)
         env:
@@ -85,12 +100,20 @@ jobs:
           EXPECTED_VERSION: ${{ steps.version.outputs.version }}
         run: ./scripts/release.sh
 
+      - name: Sign the update and generate the appcast
+        env:
+          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+        run: |
+          [ -n "$SPARKLE_ED_PRIVATE_KEY" ] || { echo "::error::Missing secret SPARKLE_ED_PRIVATE_KEY (see docs/RELEASING.md)"; exit 1; }
+          OPENSSL="$(brew --prefix openssl@3)/bin/openssl" ./scripts/appcast.sh
+
       - uses: actions/upload-artifact@v7
         with:
           name: Cabral-${{ steps.version.outputs.version }}
           path: |
             build/Cabral-*.dmg
             build/Cabral-*.dmg.sha256
+            build/appcast.xml
           if-no-files-found: error
           retention-days: 14
 
@@ -106,7 +129,7 @@ jobs:
           if [ -s "$RUNNER_TEMP/notes.md" ]; then FLAGS+=(--notes-file "$RUNNER_TEMP/notes.md"); else FLAGS+=(--generate-notes); fi
           if [[ "$VERSION" == *-* ]]; then FLAGS+=(--prerelease); fi
           if [[ "$EVENT" == workflow_dispatch ]]; then FLAGS+=(--draft); fi
-          gh release create "$TAG" "${FLAGS[@]}" "build/Cabral-$VERSION.dmg" "build/Cabral-$VERSION.dmg.sha256"
+          gh release create "$TAG" "${FLAGS[@]}" "build/Cabral-$VERSION.dmg" "build/Cabral-$VERSION.dmg.sha256" build/appcast.xml
 
       - name: Remove keychain
         if: always()

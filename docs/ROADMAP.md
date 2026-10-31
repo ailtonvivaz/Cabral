@@ -4,6 +4,8 @@ Ideas gathered from [OpenIn 4](https://loshadki.app/openin4/) and [Choosy](https
 
 ## Next (cheap, no new screens)
 
+- **Homebrew cask.** A tap (`ailtonvivaz/tap`) for people who prefer no network traffic from the app: they update with `brew upgrade`. The cask should set `auto_updates true`, since Sparkle also updates the app.
+
 - **More languages.** The String Catalog ships English and pt-BR; new languages are a good first contribution.
 - **Modifier forces the picker** (OpenIn). Holding ⌥ while opening a link shows the picker even when a rule matches. Implementation: check `NSEvent.modifierFlags.contains(.option)` in `LinkHandler.handle` and treat it as `.ask`.
 - **Strip trackers** (OpenIn). A single "Strip trackers" switch in Settings: removes `utm_*`, `fbclid`, `gclid`, `mc_eid` and similar from the query before opening. No configurable list.

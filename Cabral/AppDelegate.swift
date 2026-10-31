@@ -3,11 +3,12 @@ import AppKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let store = Store()
     private let catalog = BrowserCatalog()
+    private let updater = Updater()
     private lazy var links = LinkHandler(store: store, catalog: catalog)
-    private lazy var settings = SettingsWindowController(store: store, catalog: catalog)
+    private lazy var settings = SettingsWindowController(store: store, catalog: catalog, updater: updater)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.mainMenu = MainMenu.make()
+        NSApp.mainMenu = MainMenu.make(updater: updater)
         // Launched by Finder/Dock/Spotlight, not to open a link.
         if notification.userInfo?[NSApplication.launchIsDefaultUserInfoKey] as? Bool == true {
             settings.show()

@@ -1,13 +1,19 @@
 import AppKit
 
 enum MainMenu {
-    static func make() -> NSMenu {
+    static func make(updater: Updater) -> NSMenu {
         let main = NSMenu()
 
         let app = NSMenu()
         app.addItem(
             withTitle: String(localized: "About Cabral"), action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)),
             keyEquivalent: "")
+        if updater.isAvailable {
+            let check = app.addItem(
+                withTitle: String(localized: "Check for Updates…"), action: #selector(Updater.checkForUpdates(_:)),
+                keyEquivalent: "")
+            check.target = updater
+        }
         app.addItem(.separator())
         app.addItem(withTitle: String(localized: "Hide Cabral"), action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         app.addItem(withTitle: String(localized: "Quit Cabral"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")

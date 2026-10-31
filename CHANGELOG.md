@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Updates through [Sparkle](https://sparkle-project.org): **Check for Updates…** in Settings › Updates and in the Cabral menu. Automatic checks only after the user agrees (Sparkle asks on the second launch); no system profile is sent.
+- Release pipeline signs each update and a Sparkle appcast with an EdDSA key and publishes `appcast.xml` with the release.
+
+### Changed
+- Privacy: the update check is Cabral's only network traffic, and Sparkle its only dependency.
+
 ## [0.1.0] - 2026-10-27
 
 ### Added

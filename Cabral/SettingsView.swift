@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(Store.self) private var store
     @Environment(BrowserCatalog.self) private var catalog
+    @Environment(Updater.self) private var updater
     @FocusState private var focusedRule: UUID?
     @State private var isDefault = DefaultBrowser.isCurrent
     @State private var showDefaultHelp = false
@@ -11,6 +12,7 @@ struct SettingsView: View {
 
     var body: some View {
         @Bindable var store = store
+        @Bindable var updater = updater
 
         Form {
             if !isDefault {
@@ -52,6 +54,23 @@ struct SettingsView: View {
                 Text("Links that match no rule.")
                     .foregroundStyle(.secondary)
             }
+
+            if updater.isAvailable {
+                Section {
+                    Toggle("Check for updates automatically", isOn: $updater.automaticallyChecksForUpdates)
+                    LabeledContent {
+                        Button("Check Now") { updater.checkForUpdates(nil) }
+                            .disabled(!updater.canCheckForUpdates)
+                    } label: {
+                        Text("Version \(Self.version)")
+                    }
+                } header: {
+                    Text("Updates")
+                } footer: {
+                    Text("Update checks contact GitHub only and send nothing about your Mac.")
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
         .formStyle(.grouped)
         .frame(minWidth: 560, minHeight: 420)
@@ -84,6 +103,8 @@ struct SettingsView: View {
             isDefault = DefaultBrowser.isCurrent
         }
     }
+
+    private static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
 
     private var test: TestOutcome? {
         let input = testInput.trimmingCharacters(in: .whitespaces)
