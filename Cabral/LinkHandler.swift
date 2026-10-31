@@ -4,6 +4,8 @@ final class LinkHandler {
     struct Link {
         let url: URL
         let sender: String?
+        /// Show the picker near the pointer. False for Handoff, where the pointer is on the Dock or in Cmd-Tab.
+        var atPointer = true
     }
 
     private let store: Store
@@ -18,7 +20,7 @@ final class LinkHandler {
     }
 
     func handle(_ link: Link) {
-        let link = Link(url: LinkUnwrapper.unwrap(link.url), sender: link.sender)
+        let link = Link(url: LinkUnwrapper.unwrap(link.url), sender: link.sender, atPointer: link.atPointer)
         switch Router.resolve(link.url, in: store.config).action {
         case .browser(let id): open(link, with: id)
         case .ask: enqueue(link, forced: false)

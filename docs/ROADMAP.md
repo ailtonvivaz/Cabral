@@ -27,4 +27,4 @@ Ideas gathered from [OpenIn 4](https://loshadki.app/openin4/) and [Choosy](https
 
 - JavaScript scripts and regex URL rewriting (OpenIn): powerful, but contrary to "easy to understand".
 - Routing email, `tel:` and files: a different product.
-- Share menu, AirDrop, Handoff: rare cases for the app's goal.
+- Share menu, AirDrop: rare cases for the app's goal. (Handoff of web pages shipped after all: as the default browser, Cabral must receive it or Safari takes over.)
