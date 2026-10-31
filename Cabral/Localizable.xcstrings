@@ -181,6 +181,17 @@
         }
       }
     },
+    "Handoff" : {
+      "comment" : "Shown as the sender of a link handed off from another device, such as an iPhone.",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Handoff"
+          }
+        }
+      }
+    },
     "Hide Cabral" : {
       "localizations" : {
         "pt-BR" : {

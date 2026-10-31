@@ -57,7 +57,7 @@ final class PickerPanel: NSPanel {
     override var canBecomeKey: Bool { true }
 
     func show() {
-        positionNearMouse()
+        if model.link.atPointer { positionNearMouse() } else { centerOnScreen() }
         makeKeyAndOrderFront(nil)
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, self.isKeyWindow else { return event }
@@ -109,5 +109,11 @@ final class PickerPanel: NSPanel {
         let x = min(max(mouse.x - frame.width / 2, visible.minX + 8), visible.maxX - frame.width - 8)
         let y = min(max(mouse.y - frame.height - 16, visible.minY + 8), visible.maxY - frame.height - 8)
         setFrameOrigin(NSPoint(x: x, y: y))
+    }
+
+    /// Centered in the visible frame of the active screen.
+    private func centerOnScreen() {
+        guard let visible = NSScreen.main?.visibleFrame else { return center() }
+        setFrameOrigin(NSPoint(x: visible.midX - frame.width / 2, y: visible.midY - frame.height / 2))
     }
 }

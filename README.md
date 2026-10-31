@@ -43,6 +43,8 @@ page itself; it only decides, then hands the URL over.
 - Links that arrive together are queued and handled one at a time.
 - Unwraps Microsoft Teams, Outlook Safe Links and Google result redirects (`google.com/url?q=…`)
   before routing, so rules apply to the real destination.
+- Handoff: a page handed off from Safari on your iPhone or iPad opens through your rules too,
+  instead of always in Safari.
 - Settings window: default-browser banner, inline rule editing, duplicate detection, a warning
   for rules that point at a browser that is no longer installed, and a URL tester that shows
   which rule would win.

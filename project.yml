@@ -37,6 +37,7 @@ targets:
         LSUIElement: true
         LSApplicationCategoryType: public.app-category.utilities
         NSPrincipalClass: NSApplication
+        NSUserActivityTypes: [NSUserActivityTypeBrowsingWeb]
         CFBundleURLTypes:
           - CFBundleURLName: Web site URL
             CFBundleURLSchemes: [http, https]

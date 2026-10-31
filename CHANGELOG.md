@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Handoff: a web page handed off from another device (such as Safari on iPhone) now opens through Cabral's rules instead of always in Safari.
+
 ## [0.1.0] - 2026-10-27
 
 ### Added
