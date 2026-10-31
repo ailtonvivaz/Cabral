@@ -13,11 +13,18 @@ settings:
     LOCALIZATION_PREFERS_STRING_CATALOGS: YES
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
+packages:
+  # The only dependency. Keep in sync with SPARKLE_VERSION in .github/workflows/release.yml.
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.10.1
 targets:
   Cabral:
     type: application
     platform: macOS
     sources: [Cabral]
+    dependencies:
+      - package: Sparkle
     scheme:
       testTargets: [CabralTests]
     settings:
@@ -28,6 +35,8 @@ targets:
         DEVELOPMENT_TEAM: ""
         ENABLE_HARDENED_RUNTIME: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Sparkle EdDSA public key (`generate_keys -p`). Empty disables the updater (forks, CI).
+        SPARKLE_PUBLIC_ED_KEY: ""
     info:
       path: Cabral/Info.plist
       properties:
@@ -37,6 +46,13 @@ targets:
         LSUIElement: true
         LSApplicationCategoryType: public.app-category.utilities
         NSPrincipalClass: NSApplication
+        # Sparkle: see README "Privacy" and docs/RELEASING.md before changing any of these.
+        # SUEnableAutomaticChecks is deliberately absent: Sparkle asks the user on the second launch.
+        SUFeedURL: https://github.com/ailtonvivaz/Cabral/releases/latest/download/appcast.xml
+        SUPublicEDKey: $(SPARKLE_PUBLIC_ED_KEY)
+        SURequireSignedFeed: true
+        SUVerifyUpdateBeforeExtraction: true
+        SUEnableSystemProfiling: false
         CFBundleURLTypes:
           - CFBundleURLName: Web site URL
             CFBundleURLSchemes: [http, https]

@@ -5,17 +5,19 @@ import SwiftUI
 final class SettingsWindowController: NSObject, NSWindowDelegate {
     private let store: Store
     private let catalog: BrowserCatalog
+    private let updater: Updater
     private var window: NSWindow?
 
-    init(store: Store, catalog: BrowserCatalog) {
+    init(store: Store, catalog: BrowserCatalog, updater: Updater) {
         self.store = store
         self.catalog = catalog
+        self.updater = updater
     }
 
     func show() {
         catalog.refresh()
         if window == nil {
-            let hosting = NSHostingController(rootView: SettingsView().environment(store).environment(catalog))
+            let hosting = NSHostingController(rootView: SettingsView().environment(store).environment(catalog).environment(updater))
             hosting.sizingOptions = []
             hosting.sceneBridgingOptions = [.toolbars]
             let window = NSWindow(contentViewController: hosting)
